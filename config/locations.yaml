@@ -1,0 +1,75 @@
+regions:
+  - id: lake-district
+    name: "Lake District"
+    layout: "detailed"
+    sub_regions:
+      - id: lakes-north
+        name: "North Fells"
+        target_fells: "Skiddaw, Blencathra"
+        valley: { name: "Keswick", lat: 54.600, lon: -3.137, elevation: 85 }
+        summit: { name: "Skiddaw", lat: 54.651, lon: -3.148, elevation: 931 }
+      - id: lakes-west-central
+        name: "Western & Central Fells"
+        target_fells: "Scafell Pike, Great Gable, Pillar"
+        valley: { name: "Wasdale Head", lat: 54.466, lon: -3.255, elevation: 80 }
+        summit: { name: "Scafell Pike", lat: 54.454, lon: -3.211, elevation: 978 }
+      - id: lakes-east
+        name: "Eastern Fells"
+        target_fells: "Helvellyn, Fairfield, High Street"
+        valley: { name: "Glenridding", lat: 54.544, lon: -2.950, elevation: 150 }
+        summit: { name: "Helvellyn", lat: 54.527, lon: -3.017, elevation: 950 }
+      - id: lakes-south
+        name: "Southern Fells"
+        target_fells: "Coniston Old Man, Dow Crag"
+        valley: { name: "Coniston Village", lat: 54.369, lon: -3.076, elevation: 65 }
+        summit: { name: "Old Man of Coniston", lat: 54.370, lon: -3.121, elevation: 803 }
+
+  - id: wales
+    name: "Welsh Mountains"
+    layout: "detailed"
+    sub_regions:
+      - id: eryri-north
+        name: "Northern Eryri"
+        target_fells: "Yr Wyddfa, Glyderau, Carneddau"
+        valley: { name: "Llanberis", lat: 53.118, lon: -4.127, elevation: 110 }
+        summit: { name: "Yr Wyddfa (Snowdon)", lat: 53.068, lon: -4.076, elevation: 1085 }
+      - id: eryri-south
+        name: "Mid Wales & Southern Eryri"
+        target_fells: "Cadair Idris, Rhinogydd"
+        valley: { name: "Dolgellau", lat: 52.743, lon: -3.885, elevation: 20 }
+        summit: { name: "Cadair Idris", lat: 52.699, lon: -3.908, elevation: 893 }
+      - id: bannau-brycheiniog
+        name: "Bannau Brycheiniog"
+        target_fells: "Pen y Fan, Corn Du, Cribyn"
+        valley: { name: "Storey Arms", lat: 51.874, lon: -3.468, elevation: 440 }
+        summit: { name: "Pen y Fan", lat: 51.884, lon: -3.437, elevation: 886 }
+
+  - id: peak-district
+    name: "Peak District"
+    layout: "detailed"
+    sub_regions:
+      - id: dark-peak
+        name: "Dark Peak"
+        target_fells: "Kinder Scout, Bleaklow"
+        valley: { name: "Edale", lat: 53.365, lon: -1.817, elevation: 250 }
+        summit: { name: "Kinder Low", lat: 53.385, lon: -1.872, elevation: 636 }
+      - id: white-peak
+        name: "White Peak"
+        target_fells: "Chrome Hill, Parkhouse Hill, Dovedale"
+        valley: { name: "Longnor", lat: 53.183, lon: -1.871, elevation: 230 }
+        summit: { name: "Chrome Hill", lat: 53.197, lon: -1.901, elevation: 425 }
+
+  - id: south
+    name: "Southern Ridges & Moors"
+    layout: "compact"
+    sub_regions:
+      - id: dartmoor
+        name: "Dartmoor High Moor"
+        target_fells: "High Willhays, Yes Tor"
+        valley: { name: "Okehampton", lat: 50.738, lon: -3.998, elevation: 180 }
+        summit: { name: "High Willhays", lat: 50.693, lon: -4.011, elevation: 621 }
+      - id: south-downs
+        name: "South Downs"
+        target_fells: "Ditchling Beacon, Firle Beacon"
+        valley: { name: "Ditchling", lat: 50.923, lon: -0.115, elevation: 60 }
+        summit: { name: "Ditchling Beacon", lat: 50.903, lon: -0.108, elevation: 248 }

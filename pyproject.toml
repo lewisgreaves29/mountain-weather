@@ -1,0 +1,62 @@
+[project]
+name = "mountain-weather"
+version = "1.0.0"
+description = "UK Mountain Weather Dashboard and Hazard Engine for K3s"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "httpx>=0.27.2",
+    "apscheduler>=3.10.4",
+    "pyyaml>=6.0.2",
+    "jsonschema>=4.23.0",
+    "pytz>=2024.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "respx>=0.22.0",
+    "ruff>=0.7.2",
+    "mypy>=1.13.0",
+    "types-pyyaml>=6.0.12.20240917",
+    "types-pytz>=2024.2.0.20241003",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "apscheduler.*",
+    "jsonschema.*",
+    "pytz.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["backend/tests"]
+pythonpath = ["."]

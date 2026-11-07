@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mountain-weather
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: mountain-weather
+    app.kubernetes.io/part-of: greaveslabs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mountain-weather
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mountain-weather
+        app.kubernetes.io/part-of: greaveslabs
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/lewisgreaves29/mountain-weather:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: POLL_INTERVAL_MINUTES
+              value: "30"
+          envFrom:
+            - secretRef:
+                name: mountain-weather-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
