@@ -1,5 +1,7 @@
 import os
+
 import pytest
+
 from backend.app.config import get_settings
 
 # Inject mock secret for test runs so validation passes

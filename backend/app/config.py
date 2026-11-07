@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # 1Password injected secrets - mandatory, no default fallback
     auth_secret_token: str = Field(..., alias="AUTH_SECRET_TOKEN")
-    alert_webhook_url: Optional[str] = Field(default=None, alias="ALERT_WEBHOOK_URL")
+    alert_webhook_url: str | None = Field(default=None, alias="ALERT_WEBHOOK_URL")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -34,6 +34,4 @@ def get_settings() -> Settings:
     try:
         return Settings()  # type: ignore[call-arg]
     except Exception as exc:
-        raise RuntimeError(
-            f"Configuration error: Missing required environment variable or secret. {exc}"
-        ) from exc
+        raise RuntimeError(f"Configuration error: Missing required environment variable or secret. {exc}") from exc

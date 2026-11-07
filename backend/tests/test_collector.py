@@ -1,8 +1,10 @@
 from pathlib import Path
+
 import httpx
 import pytest
 import respx
-from backend.app.services.collector import OPEN_METEO_BASE_URL, WeatherCollector
+
+from backend.app.services.collector import WeatherCollector
 
 
 @pytest.fixture

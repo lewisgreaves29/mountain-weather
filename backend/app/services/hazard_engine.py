@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+
 from backend.app.models.domain import HazardAssessment, HazardLevel
 
 logger = logging.getLogger(__name__)
@@ -14,10 +14,10 @@ class HazardEngine:
     @staticmethod
     def calculate_cloud_base(
         elevation: float,
-        temperature: Optional[float],
-        dew_point: Optional[float],
-        reported_cloud_base: Optional[float] = None,
-    ) -> Optional[float]:
+        temperature: float | None,
+        dew_point: float | None,
+        reported_cloud_base: float | None = None,
+    ) -> float | None:
         """Calculates estimated cloud base height (meters AMSL).
 
         Uses reported cloud base if present, otherwise computes via the Lawrence
@@ -37,14 +37,14 @@ class HazardEngine:
     def evaluate(
         cls,
         summit_elevation: float,
-        summit_gust: Optional[float],
-        summit_wind_speed: Optional[float],
-        summit_temp: Optional[float],
-        summit_apparent_temp: Optional[float],
-        freezing_level: Optional[float],
-        precip_probability: Optional[float],
-        cloud_cover_low: Optional[float],
-        cloud_base: Optional[float],
+        summit_gust: float | None,
+        summit_wind_speed: float | None,
+        summit_temp: float | None,
+        summit_apparent_temp: float | None,
+        freezing_level: float | None,
+        precip_probability: float | None,
+        cloud_cover_low: float | None,
+        cloud_base: float | None,
     ) -> HazardAssessment:
         """Evaluates raw summit meteorological conditions against strict mountain safety rules."""
         reasons: list[str] = []
@@ -71,9 +71,7 @@ class HazardEngine:
         if gust >= 40.0:
             is_red = True
             wind_hazard = True
-            reasons.append(
-                f"Severe gale: Summit wind gusts reaching {gust:.0f} mph (>= 40 mph threshold)."
-            )
+            reasons.append(f"Severe gale: Summit wind gusts reaching {gust:.0f} mph (>= 40 mph threshold).")
 
         # 2. Freezing level <= Summit Elevation AND precipitation probability >= 40%
         # (imminent icing/rime/verglas conditions)
@@ -112,9 +110,7 @@ class HazardEngine:
         if 28.0 <= gust <= 39.0:
             is_amber = True
             wind_hazard = True
-            reasons.append(
-                f"Strong buffeting: Summit wind gusts between {gust:.0f} mph (28-39 mph caution)."
-            )
+            reasons.append(f"Strong buffeting: Summit wind gusts between {gust:.0f} mph (28-39 mph caution).")
 
         # 2. Low cloud cover >= 80% with cloud base below summit elevation
         # (persistent clag / low visibility requiring navigation)
@@ -130,9 +126,7 @@ class HazardEngine:
         if app_temp <= 0.0:
             is_amber = True
             chill_hazard = True
-            reasons.append(
-                f"Freezing apparent temperature: Summit feels like {app_temp:.1f}°C (<= 0°C threshold)."
-            )
+            reasons.append(f"Freezing apparent temperature: Summit feels like {app_temp:.1f}°C (<= 0°C threshold).")
 
         if is_amber:
             return HazardAssessment(

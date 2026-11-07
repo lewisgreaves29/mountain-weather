@@ -1,9 +1,10 @@
 import asyncio
-from datetime import datetime, timezone
 import json
 import logging
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 import httpx
 import jsonschema
 import yaml
@@ -37,11 +38,11 @@ class WeatherCollector:
     for UK mountain summits and valley baselines, maintaining an async-safe in-memory cache.
     """
 
-    def __init__(self, locations_file: Optional[Path] = None):
+    def __init__(self, locations_file: Path | None = None):
         self.settings = get_settings()
         self.locations_file = locations_file or self.settings.locations_file
-        self.locations_config: Dict[str, Any] = {}
-        self._cache: Optional[WeatherResponse] = None
+        self.locations_config: dict[str, Any] = {}
+        self._cache: WeatherResponse | None = None
         self._cache_lock = asyncio.Lock()
         self._is_ready = False
         self._load_locations()
@@ -68,10 +69,10 @@ class WeatherCollector:
         lat: float,
         lon: float,
         elevation: float,
-        client: Optional[httpx.AsyncClient] = None,
+        client: httpx.AsyncClient | None = None,
     ) -> OpenMeteoResponse:
         """Fetches deterministic UKMO Seamless weather forecast for exact coordinates and elevation."""
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "latitude": lat,
             "longitude": lon,
             "elevation": elevation,
@@ -100,7 +101,7 @@ class WeatherCollector:
         data = resp.json()
         return OpenMeteoResponse.model_validate(data)
 
-    def _find_current_hour_index(self, times: List[str], now_utc: datetime) -> int:
+    def _find_current_hour_index(self, times: list[str], now_utc: datetime) -> int:
         """Finds the index of the hourly entry closest to current UTC time."""
         if not times:
             return 0
@@ -113,7 +114,7 @@ class WeatherCollector:
             min_diff = float("inf")
             for idx, t_str in enumerate(times):
                 try:
-                    dt = datetime.fromisoformat(t_str).replace(tzinfo=timezone.utc)
+                    dt = datetime.fromisoformat(t_str).replace(tzinfo=UTC)
                     diff = abs((dt - now_utc).total_seconds())
                     if diff < min_diff:
                         min_diff = diff
@@ -130,13 +131,13 @@ class WeatherCollector:
     ) -> WeatherMetricPoint:
         h = om.hourly
 
-        def get_val(lst: List[Optional[float]], default: float = 0.0) -> float:
+        def get_val(lst: list[float | None], default: float = 0.0) -> float:
             if 0 <= idx < len(lst) and lst[idx] is not None:
                 val = lst[idx]
                 return float(val) if val is not None else default
             return default
 
-        def get_opt(lst: List[Optional[float]]) -> Optional[float]:
+        def get_opt(lst: list[float | None]) -> float | None:
             if 0 <= idx < len(lst):
                 return lst[idx]
             return None
@@ -173,17 +174,17 @@ class WeatherCollector:
             estimated_cloud_base=round(cloud_base, 0) if cloud_base is not None else None,
         )
 
-    async def collect_all(self, client: Optional[httpx.AsyncClient] = None) -> WeatherResponse:
+    async def collect_all(self, client: httpx.AsyncClient | None = None) -> WeatherResponse:
         """Collects weather for all configured regions and evaluates ridge hazards."""
-        now_utc = datetime.now(timezone.utc)
-        regions_result: List[RegionWeather] = []
+        now_utc = datetime.now(UTC)
+        regions_result: list[RegionWeather] = []
 
         async with httpx.AsyncClient(timeout=20.0) as shared_client:
             http_client = client or shared_client
 
             for reg_cfg in self.locations_config.get("regions", []):
-                sub_regions_weather: List[SubRegionWeather] = []
-                region_hazards: List[HazardLevel] = []
+                sub_regions_weather: list[SubRegionWeather] = []
+                region_hazards: list[HazardLevel] = []
 
                 for sub_cfg in reg_cfg.get("sub_regions", []):
                     v_cfg = sub_cfg["valley"]
@@ -220,12 +221,8 @@ class WeatherCollector:
 
                     curr_idx = self._find_current_hour_index(summit_om.hourly.time, now_utc)
 
-                    valley_current = self._extract_metric_point(
-                        valley_om, curr_idx, valley_loc.elevation
-                    )
-                    summit_current = self._extract_metric_point(
-                        summit_om, curr_idx, summit_loc.elevation
-                    )
+                    valley_current = self._extract_metric_point(valley_om, curr_idx, valley_loc.elevation)
+                    summit_current = self._extract_metric_point(summit_om, curr_idx, summit_loc.elevation)
 
                     temp_delta = round(valley_current.temperature - summit_current.temperature, 1)
 
@@ -244,7 +241,7 @@ class WeatherCollector:
                     region_hazards.append(hazard.level)
 
                     # Build next 24 hours forecast
-                    hourly_points: List[HourlyForecastPoint] = []
+                    hourly_points: list[HourlyForecastPoint] = []
                     total_hours = len(summit_om.hourly.time)
                     for h_idx in range(curr_idx, min(curr_idx + 24, total_hours)):
                         t_str = summit_om.hourly.time[h_idx]

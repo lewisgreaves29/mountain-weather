@@ -1,5 +1,6 @@
 import logging
 import sys
+
 from backend.app.config import Settings, get_settings
 
 logger = logging.getLogger(__name__)

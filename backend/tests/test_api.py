@@ -1,8 +1,10 @@
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
+
 import pytest
-from fastapi.testclient import TestClient
 import respx
+from fastapi.testclient import TestClient
+
 from backend.app.main import app, lifespan
 from backend.app.services.collector import collector
 from backend.app.services.secrets import validate_secrets
@@ -110,6 +112,7 @@ def test_spa_serving_fallback_and_files(client, tmp_path):
 async def test_app_lifespan():
     """Test lifespan startup and shutdown with scheduler and initial warm up."""
     import asyncio
+
     with patch.object(collector, "collect_all", new_callable=AsyncMock) as mock_collect:
         async with lifespan(app):
             await asyncio.sleep(0.05)
@@ -119,6 +122,7 @@ async def test_app_lifespan():
 def test_secrets_validation():
     """Verify secrets validation succeeds with valid env and exits when missing."""
     import os
+
     settings = validate_secrets()
     assert settings.auth_secret_token == "test-token-xyz-12345"
 
@@ -126,6 +130,7 @@ def test_secrets_validation():
     try:
         os.environ["AUTH_SECRET_TOKEN"] = ""
         from backend.app.config import get_settings
+
         get_settings.cache_clear()
         with pytest.raises((SystemExit, RuntimeError)):
             validate_secrets()

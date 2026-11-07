@@ -1,7 +1,9 @@
 import asyncio
-from contextlib import asynccontextmanager
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,7 +25,7 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 1. Validate secrets injected from 1Password Connect
     settings = validate_secrets()
     logger.info("Initializing UK Mountain Weather Dashboard (Env: %s)", settings.app_env)
@@ -41,7 +43,7 @@ async def lifespan(app: FastAPI):
     logger.info("Started background weather ingestor (Interval: %d min)", settings.poll_interval_minutes)
 
     # 3. Trigger initial asynchronous cache warm-up
-    async def warm_up():
+    async def warm_up() -> None:
         try:
             logger.info("Priming weather cache from UK Met Office Open-Meteo model...")
             await collector.collect_all()
@@ -80,13 +82,13 @@ app.include_router(api_router)
 
 
 @app.get("/healthz")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Liveness probe: returns 200 ok."""
     return {"status": "ok"}
 
 
 @app.get("/readyz")
-async def readiness_check():
+async def readiness_check() -> dict[str, str]:
     """Readiness probe: returns 503 until initial cache warm-up completes, then 200."""
     if not collector.is_ready:
         raise HTTPException(
@@ -102,7 +104,7 @@ if (STATIC_DIR / "assets").exists():
 
 
 @app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
+async def serve_spa(full_path: str) -> Response:
     """Serve the single-page Vue 3 application."""
     if STATIC_DIR.exists():
         index_file = STATIC_DIR / "index.html"
@@ -122,5 +124,6 @@ async def serve_spa(full_path: str):
 
 if __name__ == "__main__":
     import uvicorn
+
     app_settings = get_settings()
     uvicorn.run("backend.app.main:app", host=app_settings.host, port=app_settings.port, reload=True)

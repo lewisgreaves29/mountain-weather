@@ -1,4 +1,3 @@
-import pytest
 from backend.app.models.domain import HazardLevel
 from backend.app.services.hazard_engine import HazardEngine, hazard_engine
 

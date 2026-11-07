@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
+
 from backend.app.models.domain import WeatherResponse
 from backend.app.services.collector import collector
 
