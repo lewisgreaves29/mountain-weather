@@ -69,6 +69,22 @@ def test_weather_endpoint_success(client):
         assert data["model"] == "UKMO Seamless 2km"
         assert len(data["regions"]) > 0
 
+        # Also test homepage summary endpoint
+        hp_resp = client.get("/api/v1/weather/homepage")
+        assert hp_resp.status_code == 200
+        hp_data = hp_resp.json()
+        assert hp_data["status"] == "success"
+        assert "lakes" in hp_data
+        assert "wales" in hp_data
+
+
+def test_weather_homepage_endpoint_failure(client):
+    """GET /api/v1/weather/homepage returns 503 when collector raises."""
+    with patch.object(collector, "get_weather", side_effect=RuntimeError("Collector failed")):
+        response = client.get("/api/v1/weather/homepage")
+        assert response.status_code == 503
+        assert "Unable to retrieve homepage weather data" in response.json()["detail"]
+
 
 def test_weather_endpoint_failure(client):
     """GET /api/v1/weather returns 503 when collector raises."""
