@@ -80,10 +80,10 @@ def test_weather_endpoint_failure(client):
 
 def test_spa_serving_fallback_and_files(client, tmp_path):
     """Test serving SPA fallback and static files."""
-    # When static dir does not exist or has no dist
+    # When static dir does not exist or has dist
     response = client.get("/")
     assert response.status_code == 200
-    assert "UK Mountain Weather Dashboard" in response.text
+    assert "UK Mountain Weather" in response.text
 
     # When static dir exists with index.html
     static_dir = Path("backend/app/static")

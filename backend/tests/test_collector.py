@@ -79,6 +79,17 @@ async def test_collector_collect_all_and_cache_preservation(mock_open_meteo_payl
         assert collector.is_ready is True
         assert result.cached is False
 
+        # Assert daily forecast points
+        sub = result.regions[0].sub_regions[0]
+        assert len(sub.daily_forecast) > 0
+        day0 = sub.daily_forecast[0]
+        assert day0.date == "2026-11-07"
+        assert day0.day_name == "Today"
+        assert day0.summit_min_temp == 4.0
+        assert day0.summit_max_temp == 4.5
+        assert day0.summit_max_wind_gust == 35.0
+        assert day0.hazard.level is not None
+
         # 2. Simulate upstream HTTP 500 failure
         respx_mock.reset()
         respx_mock.get("/v1/forecast").respond(status_code=500)

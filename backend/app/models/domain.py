@@ -51,6 +51,21 @@ class HazardAssessment(BaseModel):
     chill_hazard: bool = False
 
 
+class DailyForecastPoint(BaseModel):
+    date: str  # YYYY-MM-DD
+    day_name: str  # "Today", "Sun 8", "Mon 9", etc.
+    summit_min_temp: float
+    summit_max_temp: float
+    valley_min_temp: float
+    valley_max_temp: float
+    summit_max_wind_speed: float
+    summit_max_wind_gust: float
+    max_precipitation_probability: float
+    total_precipitation: float
+    min_freezing_level: float | None = None
+    hazard: HazardAssessment
+
+
 class SubRegionWeather(BaseModel):
     id: str
     name: str
@@ -61,6 +76,7 @@ class SubRegionWeather(BaseModel):
     summit_current: WeatherMetricPoint
     temp_delta: float  # valley temp - summit temp (°C)
     hazard: HazardAssessment
+    daily_forecast: list[DailyForecastPoint] = Field(default_factory=list)
     hourly_forecast: list[HourlyForecastPoint] = Field(default_factory=list)
 
 

@@ -42,6 +42,21 @@ export interface HazardAssessment {
   chill_hazard: boolean
 }
 
+export interface DailyForecastPoint {
+  date: string
+  day_name: string
+  summit_min_temp: number
+  summit_max_temp: number
+  valley_min_temp: number
+  valley_max_temp: number
+  summit_max_wind_speed: number
+  summit_max_wind_gust: number
+  max_precipitation_probability: number
+  total_precipitation: number
+  min_freezing_level?: number | null
+  hazard: HazardAssessment
+}
+
 export interface SubRegionWeather {
   id: string
   name: string
@@ -52,6 +67,7 @@ export interface SubRegionWeather {
   summit_current: WeatherMetricPoint
   temp_delta: number
   hazard: HazardAssessment
+  daily_forecast: DailyForecastPoint[]
   hourly_forecast: HourlyForecastPoint[]
 }
 

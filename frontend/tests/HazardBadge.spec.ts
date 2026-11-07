@@ -94,6 +94,7 @@ describe('MountainCardDetailed Component', () => {
       visibility_hazard: false,
       chill_hazard: false
     },
+    daily_forecast: [],
     hourly_forecast: []
   }
 

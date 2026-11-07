@@ -11,6 +11,8 @@ import yaml
 
 from backend.app.config import get_settings
 from backend.app.models.domain import (
+    DailyForecastPoint,
+    HazardAssessment,
     HazardLevel,
     HourlyForecastPoint,
     LocationPoint,
@@ -240,10 +242,113 @@ class WeatherCollector:
                     )
                     region_hazards.append(hazard.level)
 
-                    # Build next 24 hours forecast
+                    # Group available hourly indices by calendar date (UTC)
+                    date_indices: dict[str, list[int]] = {}
+                    for idx, t_str in enumerate(summit_om.hourly.time):
+                        d_str = t_str.split("T")[0]
+                        date_indices.setdefault(d_str, []).append(idx)
+
+                    today_str = now_utc.strftime("%Y-%m-%d")
+                    sorted_dates = [d for d in sorted(date_indices.keys()) if d >= today_str][:7]
+
+                    daily_points: list[DailyForecastPoint] = []
+                    for d_str in sorted_dates:
+                        d_indices = date_indices[d_str]
+                        d_obj = datetime.strptime(d_str, "%Y-%m-%d").date()
+                        day_name = "Today" if d_str == today_str else f"{d_obj.strftime('%a')} {d_obj.day}"
+
+                        s_temps = [val for i in d_indices if (val := summit_om.hourly.temperature_2m[i]) is not None]
+                        v_temps = [val for i in d_indices if (val := valley_om.hourly.temperature_2m[i]) is not None]
+                        s_winds = [val for i in d_indices if (val := summit_om.hourly.wind_speed_10m[i]) is not None]
+                        s_gusts = [val for i in d_indices if (val := summit_om.hourly.wind_gusts_10m[i]) is not None]
+                        p_probs = [
+                            val for i in d_indices if (val := summit_om.hourly.precipitation_probability[i]) is not None
+                        ]
+                        precips = [val for i in d_indices if (val := summit_om.hourly.precipitation[i]) is not None]
+                        f_levels = [
+                            val for i in d_indices if (val := summit_om.hourly.freezing_level_height[i]) is not None
+                        ]
+
+                        s_min = round(min(s_temps), 1) if s_temps else 0.0
+                        s_max = round(max(s_temps), 1) if s_temps else 0.0
+                        v_min = round(min(v_temps), 1) if v_temps else 0.0
+                        v_max = round(max(v_temps), 1) if v_temps else 0.0
+                        s_max_wind = round(max(s_winds), 1) if s_winds else 0.0
+                        s_max_gust = round(max(s_gusts), 1) if s_gusts else 0.0
+                        max_p_prob = round(max(p_probs), 0) if p_probs else 0.0
+                        tot_precip = round(sum(precips), 1) if precips else 0.0
+                        min_freeze = round(min(f_levels), 0) if f_levels else None
+
+                        day_reasons: list[str] = []
+                        day_level = HazardLevel.GREEN
+                        w_haz = False
+                        i_haz = False
+                        v_haz = False
+                        c_haz = False
+
+                        for i in d_indices:
+                            sp = self._extract_metric_point(summit_om, i, summit_loc.elevation)
+                            he = hazard_engine.evaluate(
+                                summit_elevation=summit_loc.elevation,
+                                summit_gust=sp.wind_gust,
+                                summit_wind_speed=sp.wind_speed,
+                                summit_temp=sp.temperature,
+                                summit_apparent_temp=sp.apparent_temperature,
+                                freezing_level=sp.freezing_level_height,
+                                precip_probability=sp.precipitation_probability,
+                                cloud_cover_low=sp.cloud_cover_low,
+                                cloud_base=sp.estimated_cloud_base,
+                            )
+                            if he.level == HazardLevel.RED:
+                                day_level = HazardLevel.RED
+                            elif he.level == HazardLevel.AMBER and day_level != HazardLevel.RED:
+                                day_level = HazardLevel.AMBER
+
+                            if he.wind_hazard:
+                                w_haz = True
+                            if he.icing_hazard:
+                                i_haz = True
+                            if he.visibility_hazard:
+                                v_haz = True
+                            if he.chill_hazard:
+                                c_haz = True
+
+                            for r in he.reasons:
+                                if r not in day_reasons:
+                                    day_reasons.append(r)
+
+                        if not day_reasons:
+                            day_reasons.append(f"Favourable summit conditions: Peak gusts {s_max_gust:.0f} mph.")
+
+                        daily_points.append(
+                            DailyForecastPoint(
+                                date=d_str,
+                                day_name=day_name,
+                                summit_min_temp=s_min,
+                                summit_max_temp=s_max,
+                                valley_min_temp=v_min,
+                                valley_max_temp=v_max,
+                                summit_max_wind_speed=s_max_wind,
+                                summit_max_wind_gust=s_max_gust,
+                                max_precipitation_probability=max_p_prob,
+                                total_precipitation=tot_precip,
+                                min_freezing_level=min_freeze,
+                                hazard=HazardAssessment(
+                                    level=day_level,
+                                    reasons=day_reasons[:5],
+                                    wind_hazard=w_haz,
+                                    icing_hazard=i_haz,
+                                    visibility_hazard=v_haz,
+                                    chill_hazard=c_haz,
+                                ),
+                            )
+                        )
+
+                    # Build hourly forecast points for all available days
                     hourly_points: list[HourlyForecastPoint] = []
+                    start_idx = date_indices[sorted_dates[0]][0] if sorted_dates else curr_idx
                     total_hours = len(summit_om.hourly.time)
-                    for h_idx in range(curr_idx, min(curr_idx + 24, total_hours)):
+                    for h_idx in range(start_idx, total_hours):
                         t_str = summit_om.hourly.time[h_idx]
                         v_point = self._extract_metric_point(valley_om, h_idx, valley_loc.elevation)
                         s_point = self._extract_metric_point(summit_om, h_idx, summit_loc.elevation)
@@ -285,6 +390,7 @@ class WeatherCollector:
                             summit_current=summit_current,
                             temp_delta=temp_delta,
                             hazard=hazard,
+                            daily_forecast=daily_points,
                             hourly_forecast=hourly_points,
                         )
                     )
